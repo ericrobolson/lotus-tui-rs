@@ -1,7 +1,9 @@
 use crossterm::{
     QueueableCommand, cursor,
     event::{Event, KeyCode, poll, read},
-    terminal::{disable_raw_mode, enable_raw_mode},
+    execute, queue,
+    style::Print,
+    terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode},
 };
 use std::{
     io::{Write, stdout},
@@ -19,7 +21,7 @@ impl Screen {
 
     fn read_events() -> Result<Vec<Event>, Box<dyn std::error::Error>> {
         let mut events = Vec::new();
-        while poll(Duration::from_millis(1_000))? {
+        while poll(Duration::from_millis(1))? {
             let event = read()?;
             events.push(event);
         }
@@ -48,27 +50,45 @@ impl Screen {
     }
 
     /// Update the screen with the given elements.
-    pub fn update(&mut self, elements: &Vec<Element>) -> UpdateResult {
+    pub fn update(
+        &mut self,
+        elements: &Vec<Element>,
+    ) -> Result<UpdateResult, Box<dyn std::error::Error>> {
         match Self::read_events() {
             Ok(events) => {
                 let result = Self::handle_key_events(&events);
                 if result == UpdateResult::Exit {
-                    return UpdateResult::Exit;
+                    return Ok(UpdateResult::Exit);
                 }
             }
             Err(e) => {
-                eprintln!("Error reading events: {e}");
-                return UpdateResult::Exit;
+                return Err(e);
             }
         }
 
-        UpdateResult::Continue
+        // Draw things
+        let mut out = stdout();
+        out.queue(Clear(ClearType::All))?;
+        out.queue(cursor::Hide)?;
+
+        for element in elements {
+            match element {
+                Element::Label(label) => {
+                    out.queue(cursor::MoveTo(0, 0))?;
+                    out.queue(Print(label))?;
+                }
+            }
+        }
+
+        out.flush().expect("Failed to flush stdout");
+
+        Ok(UpdateResult::Continue)
     }
 }
 
 impl Drop for Screen {
     fn drop(&mut self) {
-        let _ = stdout().flush();
+        // let _ = stdout().flush();
 
         disable_raw_mode().expect("Failed to disable raw mode");
     }

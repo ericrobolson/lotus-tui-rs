@@ -39,7 +39,7 @@ impl<State> App<State> {
             }
 
             // Update screen with elements
-            let result = self.screen.update(&elements);
+            let result = self.screen.update(&elements)?;
             if result == UpdateResult::Exit {
                 keep_running = false;
             }
