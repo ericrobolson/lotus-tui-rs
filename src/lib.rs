@@ -1,11 +1,19 @@
+mod drawing;
+
+use crate::drawing::Screen;
+
 /// Main application for building TUI programs.
 pub struct App<State> {
     state: State,
+    screen: Screen,
 }
 impl<State> App<State> {
     /// Create a new application with the given state.
     pub fn new(state: State) -> Self {
-        Self { state }
+        Self {
+            state,
+            screen: Screen::new(),
+        }
     }
 
     /// Run the application.
@@ -30,7 +38,11 @@ impl<State> App<State> {
                 UpdateResult::Exit => keep_running = false,
             }
 
-            // Do some stuff then
+            // Update screen with elements
+            let result = self.screen.update(&elements);
+            if result == UpdateResult::Exit {
+                keep_running = false;
+            }
         }
 
         Ok(())
