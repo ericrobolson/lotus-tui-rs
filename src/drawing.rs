@@ -88,8 +88,13 @@ impl Screen {
 
 impl Drop for Screen {
     fn drop(&mut self) {
-        // let _ = stdout().flush();
-
         disable_raw_mode().expect("Failed to disable raw mode");
+
+        // Reset the screen
+        let mut out = stdout();
+        out.queue(Clear(ClearType::All))
+            .expect("Failed to clear screen");
+        out.queue(cursor::Show).expect("Failed to show cursor");
+        out.flush().expect("Failed to flush stdout");
     }
 }
