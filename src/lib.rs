@@ -19,18 +19,18 @@ impl<State> App<State> {
     /// Run the application.
     pub fn run(
         &mut self,
-        mut update: impl FnMut(Context<State>) -> UpdateResult,
+        mut update: impl FnMut(&mut Context<State>) -> UpdateResult,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut keep_running = true;
         while keep_running {
             let mut elements = Vec::new();
             let result = {
-                let context = Context {
+                let mut context = Context {
                     state: &mut self.state,
                     elements: &mut elements,
                 };
 
-                update(context)
+                update(&mut context)
             };
 
             match result {
