@@ -13,14 +13,24 @@ impl<State> App<State> {
         &mut self,
         mut update: impl FnMut(Context<State>) -> UpdateResult,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        loop {
-            let context = Context {
-                state: &mut self.state,
+        let mut keep_running = true;
+        while keep_running {
+            let mut elements = Vec::new();
+            let result = {
+                let context = Context {
+                    state: &mut self.state,
+                    elements: &mut elements,
+                };
+
+                update(context)
             };
-            match update(context) {
+
+            match result {
                 UpdateResult::Continue => (),
-                UpdateResult::Exit => break,
+                UpdateResult::Exit => keep_running = false,
             }
+
+            // Do some stuff then
         }
 
         Ok(())
@@ -30,6 +40,19 @@ impl<State> App<State> {
 /// Context for building UI screens.
 pub struct Context<'a, State> {
     pub state: &'a mut State,
+    elements: &'a mut Vec<Element>,
+}
+
+impl<'a, State> Context<'a, State> {
+    /// Add a label to the context.
+    pub fn label(&mut self, label: &str) -> &mut Self {
+        self.elements.push(Element::Label(label.to_string()));
+        self
+    }
+}
+
+pub enum Element {
+    Label(String),
 }
 
 /// Result of updating the application.
